@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Finite Automata Visualizer</title>
+<link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+<div class="ambient-2"></div>
+
+<header>
+  <div class="logo-text">
+    <h1>Finite Automata Visualizer</h1>
+    <p>Interactive Simulator</p>
+  </div>
+  <div class="header-badge">
+    <nav class="nav-tabs">
+      <button class="nav-tab active" id="nav-builder" onclick="showPage('builder')">🔧 Builder</button>
+      <button class="nav-tab" id="nav-learn" onclick="showPage('learn')">📚 Learn</button>
+    </nav>
+    <span class="badge badge-dfa active-mode" id="mode-dfa" onclick="setMode('DFA')">DFA</span>
+    <span class="badge badge-nfa" id="mode-nfa" onclick="setMode('NFA')">NFA</span>
+  </div>
+</header>
+
+<!-- ==================== BUILDER PAGE ==================== -->
+<div class="page active" id="page-builder">
+<div class="main">
+
+  <!-- LEFT PANEL -->
+  <div class="panel">
+
+    <div class="section">
+      <div class="panel-title">⬡ States</div>
+      <label>State name</label>
+      <input type="text" id="state-name-input" placeholder="q0, q1, q2 ..." maxlength="8" onkeydown="if(event.key==='Enter') addState()"/>
+      <div class="btn-row">
+        <button class="btn btn-primary btn-sm" onclick="addState()">+ Add State</button>
+        <button class="btn btn-secondary btn-sm" onclick="clearAll()">Clear All</button>
+      </div>
+      <div style="height:10px"></div>
+      <div class="state-list" id="state-list"></div>
+    </div>
+
+    <div class="section">
+      <div class="panel-title">→ Transitions</div>
+      <label>From state</label>
+      <select id="trans-from"></select>
+      <label>Symbol</label>
+      <div style="display:flex;gap:6px;margin-bottom:9px;">
+        <input type="text" id="trans-sym" placeholder="0, 1, a, b ..." maxlength="4" style="margin-bottom:0;flex:1"/>
+        <button class="epsilon-btn" onclick="insertEpsilon()" title="Insert epsilon (ε)">ε</button>
+      </div>
+      <label>To state</label>
+      <select id="trans-to"></select>
+      <button class="btn btn-primary btn-sm" onclick="addTransition()" style="width:100%;margin-top:2px">+ Add Transition</button>
+      <div style="height:10px"></div>
+      <div class="trans-list" id="trans-list"></div>
+    </div>
+
+    <div class="section">
+      <div class="panel-title">⊞ Presets</div>
+      <div class="preset-grid">
+        <button class="preset-btn" onclick="loadPreset('even0s')">Even 0s (DFA)</button>
+        <button class="preset-btn" onclick="loadPreset('endsWith1')">Ends with 1 (DFA)</button>
+        <button class="preset-btn" onclick="loadPreset('contains01')">Contains 01 (DFA)</button>
+        <button class="preset-btn nfa-preset" onclick="loadPreset('nfa01')">Ends with 01 (NFA)</button>
+        <button class="preset-btn nfa-preset" style="grid-column:1/-1" onclick="loadPreset('nfaEpsilon')">ε-NFA: (a|ab)*b</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CENTER: canvas column with pinned log bar -->
+  <div class="canvas-column">
+    <div class="canvas-area">
+      <div class="canvas-toolbar">
+        <button class="tool-btn active" id="tool-select" onclick="setTool('select')">↖ Select</button>
+        <button class="tool-btn" id="tool-move" onclick="setTool('move')">✥ Move</button>
+        <button class="tool-btn" id="tool-connect" onclick="setTool('connect')">→ Connect</button>
+      </div>
+      <canvas id="fa-canvas"></canvas>
+      <div class="canvas-hint" id="canvas-hint" style="bottom:10px">Double-click canvas to add state · Right-click state for options</div>
+      <div class="ctx-menu" id="ctx-menu">
+        <div class="ctx-item" id="ctx-start" onclick="ctxSetStart()"><span class="ci">▶</span> Set as Start</div>
+        <div class="ctx-item" id="ctx-accept" onclick="ctxToggleAccept()"><span class="ci">◎</span> Toggle Accept</div>
+        <div class="sep"></div>
+        <div class="ctx-item" id="ctx-rename" onclick="ctxRename()"><span class="ci">✎</span> Rename</div>
+        <div class="ctx-item danger" onclick="ctxDelete()"><span class="ci">✕</span> Delete State</div>
+      </div>
+    </div>
+
+    <!-- BOTTOM LOG BAR -->
+    <div class="canvas-log-bar">
+      <div class="log-bar-header">
+        <span class="log-bar-title">⬡ Simulation Log</span>
+        <div class="log-bar-step" id="log-bar-step">Ready — run a simulation to see steps</div>
+      </div>
+      <div class="log-bar-entries" id="log-bar-entries">
+        <div class="log-bar-entry"><span class="le-prefix">›</span><span>System initialized. Ready.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="panel-right">
+
+    <div class="section">
+      <div class="panel-title">▶ Simulation</div>
+      <label>Input string</label>
+      <div class="sim-input-row">
+        <input type="text" id="sim-input" placeholder="01010..." style="margin-bottom:0" onkeydown="if(event.key==='Enter') startSim()"/>
+      </div>
+      <div style="height:8px"></div>
+      <div class="tape-display" id="tape-display">
+        <span style="color:var(--text3);font-size:12px;font-family:var(--font-mono)">Enter a string to simulate...</span>
+      </div>
+      <div style="height:8px"></div>
+      <div class="sim-status idle" id="sim-status">READY</div>
+      <div style="height:8px"></div>
+
+      <div id="nfa-active-area" style="display:none">
+        <label>Active NFA states:</label>
+        <div class="nfa-active-display" id="nfa-active-display"></div>
+      </div>
+
+      <div class="sim-btn-row">
+        <button class="btn btn-success btn-sm" onclick="startSim()">▶ Run</button>
+        <button class="btn btn-secondary btn-sm" onclick="stepSim()">→ Step</button>
+        <button class="btn btn-danger btn-sm" onclick="resetSim()">↺ Reset</button>
+      </div>
+
+      <div style="height:10px"></div>
+      <div class="speed-row">
+        <span>slow</span>
+        <input type="range" id="speed-slider" min="200" max="2000" value="800" step="100"/>
+        <span>fast</span>
+      </div>
+      <div style="height:10px"></div>
+
+      <div class="step-info" id="step-info">
+        <span style="color:var(--text3);font-size:11px;font-family:var(--font-mono)">Simulation log will appear here...</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="panel-title">◉ Legend</div>
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-swatch" style="background:rgba(139,39,111,0.2);border-color:var(--normal-color)"></div>
+          Normal state
+        </div>
+        <div class="legend-item">
+          <div class="legend-swatch" style="background:rgba(253,126,5,0.15);border-color:var(--start-color)"></div>
+          Start state (→)
+        </div>
+        <div class="legend-item">
+          <div class="legend-swatch" style="background:rgba(252,162,1,0.12);border-color:var(--gold);border-width:3px;border-style:double"></div>
+          Accept state (◎)
+        </div>
+        <div class="legend-item">
+          <div class="legend-swatch" style="background:rgba(253,66,25,0.2);border-color:var(--current-color)"></div>
+          Current state
+        </div>
+        <div class="legend-item">
+          <div class="legend-swatch" style="background:rgba(252,162,1,0.08);border:1px dashed var(--c-amber)"></div>
+          ε-transition (free move)
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="panel-title">∑ Alphabet</div>
+      <div class="alphabet-badges" id="alphabet-display">
+        <span style="color:var(--text3);font-size:11px;font-family:var(--font-mono)">No symbols defined</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="panel-title">⊞ Transition Table</div>
+      <div id="trans-table-area" style="overflow-x:auto">
+        <span style="color:var(--text3);font-size:11px;font-family:var(--font-mono)">Add transitions to see table</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- ==================== LEARN PAGE ==================== -->
+<div class="page" id="page-learn">
+<div class="learn-page">
+
+  <div class="learn-hero">
+    <h2>Understanding Finite Automata</h2>
+    <p>A complete guide to DFA, NFA, and epsilon transitions — from first principles to hands-on examples.</p>
+  </div>
+
+  <div class="interactive-hint">
+    <div class="hint-icon">🔧</div>
+    <div>
+      <h4>Learn by Doing</h4>
+      <p>The best way to understand automata is to build and simulate them interactively. Switch to the Builder tab and experiment with the preset examples — or design your own from scratch.</p>
+      <button class="go-btn" onclick="showPage('builder')">Open Builder →</button>
+    </div>
+  </div>
+
+  <div class="learn-section-title"><span>📖</span> What is a Finite Automaton?</div>
+
+  <div class="learn-grid">
+    <div class="learn-card highlight-red">
+      <div class="card-icon">🧠</div>
+      <h3>The Core Idea</h3>
+      <p>A Finite Automaton (FA) is a mathematical model of computation — a simple machine that reads an input string one character at a time and decides whether to <strong style="color:#fff">accept</strong> or <strong style="color:#ff6060">reject</strong> it.</p>
+      <p>Think of it as a flowchart with a fixed set of "rooms" (states). You start in one room and follow arrows (transitions) based on what you read. At the end, if you're in a special "accepting room," the string is accepted.</p>
+    </div>
+    <div class="learn-card highlight-orange">
+      <div class="card-icon">🏗️</div>
+      <h3>5 Formal Components</h3>
+      <p>Every finite automaton is defined by a 5-tuple (Q, Σ, δ, q₀, F):</p>
+      <ul>
+        <li><strong style="color:var(--c-orange)">Q</strong> — Finite set of states</li>
+        <li><strong style="color:var(--c-orange)">Σ</strong> — Alphabet (input symbols)</li>
+        <li><strong style="color:var(--c-orange)">δ</strong> — Transition function</li>
+        <li><strong style="color:var(--c-orange)">q₀</strong> — Start state (q₀ ∈ Q)</li>
+        <li><strong style="color:var(--c-orange)">F</strong> — Set of accept states (F ⊆ Q)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="learn-section-title"><span>⚖️</span> DFA vs NFA — What's the Difference?</div>
+
+  <div class="learn-card full highlight-amber">
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>DFA — Deterministic</th>
+          <th>NFA — Nondeterministic</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Transitions</td>
+          <td>Exactly one per (state, symbol) pair</td>
+          <td>Zero, one, or many per (state, symbol)</td>
+        </tr>
+        <tr>
+          <td>Epsilon (ε)</td>
+          <td>Not allowed</td>
+          <td>Allowed — "free" transitions with no input consumed</td>
+        </tr>
+        <tr>
+          <td>Multiple paths</td>
+          <td>No — single path through states</td>
+          <td>Yes — explores all paths simultaneously (conceptually)</td>
+        </tr>
+        <tr>
+          <td>Acceptance</td>
+          <td>Accept if final state is an accept state</td>
+          <td>Accept if ANY possible path ends in an accept state</td>
+        </tr>
+        <tr>
+          <td>Computational power</td>
+          <td colspan="2" style="text-align:center;color:var(--c-amber);font-weight:600">Exactly the same — every NFA can be converted to an equivalent DFA</td>
+        </tr>
+        <tr>
+          <td>Implementation</td>
+          <td>Simpler, direct</td>
+          <td>More expressive to design, subset construction for DFA conversion</td>
+        </tr>
+        <tr>
+          <td>Dead states</td>
+          <td>Can reach a dead (trap) state → immediate reject</td>
+          <td>Missing transition = that branch dies; other branches continue</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="learn-section-title"><span>🔵</span> DFA — Deterministic Finite Automaton</div>
+
+  <div class="learn-grid">
+    <div class="learn-card highlight-orange">
+      <div class="tag tag-dfa">DFA</div>
+      <h3>How DFA Works</h3>
+      <p>In a DFA, every state must have exactly one transition for every symbol in the alphabet. There is no ambiguity — at any point in time, the machine is in exactly one state.</p>
+      <div class="formula-box">
+        δ: Q × Σ → Q<br>
+        (state, symbol) → next state
+      </div>
+      <p>The transition function δ is <em>total</em> — defined for every possible combination. If you don't define a transition, it implicitly goes to a "dead" reject state.</p>
+    </div>
+    <div class="learn-card">
+      <div class="tag tag-dfa">DFA Example</div>
+      <h3>Even Number of 0s</h3>
+      <p>This DFA accepts all binary strings containing an even count of the digit 0:</p>
+      <ul>
+        <li>q0 = start &amp; accept (even 0s seen so far)</li>
+        <li>q1 = odd number of 0s seen</li>
+        <li>On 0: toggle between q0 and q1</li>
+        <li>On 1: stay in current state</li>
+      </ul>
+      <p style="margin-top:10px">Try it: <code style="background:var(--bg);padding:2px 6px;border-radius:4px;color:var(--c-amber)">00110</code> → Accept · <code style="background:var(--bg);padding:2px 6px;border-radius:4px;color:var(--c-red)">010</code> → Reject</p>
+      <button class="btn btn-secondary btn-sm" style="margin-top:10px;width:auto" onclick="loadPreset('even0s');showPage('builder')">Load in Builder →</button>
+    </div>
+  </div>
+
+  <div class="learn-section-title"><span>🟣</span> NFA — Nondeterministic Finite Automaton</div>
+
+  <div class="learn-grid">
+    <div class="learn-card highlight-purple">
+      <div class="tag tag-nfa">NFA</div>
+      <h3>How NFA Works</h3>
+      <p>In an NFA, a state can have zero, one, or multiple transitions on the same symbol. Additionally, ε (epsilon) transitions allow jumping to states without consuming any input.</p>
+      <div class="formula-box">
+        δ: Q × (Σ ∪ {ε}) → 2<sup>Q</sup><br>
+        (state, symbol) → set of states
+      </div>
+      <p>The NFA "guesses" the right path. We say it accepts a string if <em>at least one</em> possible computation path leads to an accept state.</p>
+    </div>
+    <div class="learn-card">
+      <div class="tag tag-nfa">NFA Example</div>
+      <h3>Strings Ending in "01"</h3>
+      <p>This NFA accepts binary strings that end with "01":</p>
+      <ul>
+        <li>q0 = start (loop on 0 and 1)</li>
+        <li>On 0 from q0 → also go to q1 (guess this is the last 0)</li>
+        <li>On 1 from q1 → go to q2 (accept)</li>
+        <li>q2 = accept state</li>
+      </ul>
+      <p style="margin-top:10px">The "split" on 0 is nondeterminism — both paths explored at once!</p>
+      <button class="btn btn-secondary btn-sm" style="margin-top:10px;width:auto" onclick="loadPreset('nfa01');showPage('builder')">Load in Builder →</button>
+    </div>
+  </div>
+
+  <div class="learn-section-title"><span>ε</span> Epsilon (ε) Transitions Explained</div>
+
+  <div class="learn-card full">
+    <div class="card-icon">⚡</div>
+    <h3>What is an Epsilon Transition?</h3>
+    <p>An epsilon (ε) transition — also called a "free move" or "lambda transition" — allows the NFA to move from one state to another <strong style="color:#fff">without reading any input symbol</strong>. The input tape does not advance.</p>
+
+    <div class="epsilon-explain">
+      <h4>ε-closure(S)</h4>
+      <p>The epsilon-closure of a set of states S is all states reachable from S by following zero or more epsilon transitions. When simulating an NFA, after every move (including at the start), we immediately compute the ε-closure of the current set of active states.</p>
+    </div>
+
+    <div style="margin-top:16px">
+      <h3 style="font-size:15px;margin-bottom:10px">Why Are ε-transitions Useful?</h3>
+      <ul>
+        <li>They make NFA design much easier — think of them as "free shortcuts" in your machine</li>
+        <li>Simplify expressing alternation: "match pattern A <em>or</em> pattern B" becomes easy with ε-transitions to both sub-machines</li>
+        <li>They're the foundation of how regular expressions are compiled to automata (Thompson's construction)</li>
+        <li>Any NFA with ε-transitions can be converted to one without them (ε-removal algorithm)</li>
+      </ul>
+    </div>
+
+    <div class="formula-box" style="margin-top:14px">
+      Example: q0 --ε→ q1 means: whenever the machine is in q0,<br>
+      it can simultaneously also be in q1 at no cost.
+    </div>
+
+    <button class="btn btn-secondary btn-sm" style="margin-top:14px;width:auto" onclick="loadPreset('nfaEpsilon');showPage('builder')">See ε-NFA Example in Builder →</button>
+  </div>
+
+  <div class="learn-section-title"><span>🎯</span> How to Build Your Own FA — Step by Step</div>
+
+  <div class="learn-card full">
+    <div class="step-list">
+      <div class="step-item">
+        <div class="step-num-bubble">1</div>
+        <div class="step-item-content">
+          <h4>Define the Language</h4>
+          <p>Write out in plain English what strings your FA should accept. Example: "All binary strings with an odd number of 1s." Test your understanding by generating a few accept and reject examples by hand.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num-bubble">2</div>
+        <div class="step-item-content">
+          <h4>Choose DFA or NFA</h4>
+          <p>Use a DFA when the pattern can be tracked with a clear finite count of "status" conditions. Use an NFA when the pattern is easier to express nondeterministically (e.g., "ending with XY" — NFA is more natural; you guess when you see the beginning of the suffix).</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num-bubble">3</div>
+        <div class="step-item-content">
+          <h4>Identify Distinct "Memory" Conditions</h4>
+          <p>Each state represents what the machine "remembers" about what it has seen so far. For "even number of 0s," you only need to remember whether the count is even or odd — so 2 states. Name and create those states.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num-bubble">4</div>
+        <div class="step-item-content">
+          <h4>Mark Start and Accept States</h4>
+          <p>Exactly one state is the start state (the machine begins here). One or more states are accept states (being here when input ends means "accept"). In the Builder, click a state in the list to toggle accept, or right-click on the canvas for the context menu.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num-bubble">5</div>
+        <div class="step-item-content">
+          <h4>Add Transitions</h4>
+          <p>For each state and each input symbol, decide where the machine should go. For DFA, every state needs a transition for every symbol in the alphabet. For NFA, transitions are optional — missing means "this path dies." Add ε-transitions to allow free moves between states.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num-bubble">6</div>
+        <div class="step-item-content">
+          <h4>Test with the Simulator</h4>
+          <p>Enter strings you expect to be accepted and strings you expect to be rejected. Use the Step button to watch how the machine processes each character. Check the transition table to make sure every case is covered.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="learn-section-title"><span>📐</span> Key Theorems to Know</div>
+
+  <div class="learn-grid">
+    <div class="learn-card">
+      <div class="tag tag-both">Equivalence</div>
+      <h3>DFA = NFA in Power</h3>
+      <p>Despite their apparent differences, DFAs and NFAs recognize exactly the same class of languages: the <strong style="color:#fff">Regular Languages</strong>.</p>
+      <p>The proof is constructive — using the <em>Subset Construction</em> (powerset construction) algorithm, any NFA with n states can be converted to a DFA with at most 2ⁿ states.</p>
+    </div>
+    <div class="learn-card">
+      <div class="tag tag-both">Closure Properties</div>
+      <h3>Regular Languages are Closed Under</h3>
+      <ul>
+        <li>Union (L₁ ∪ L₂)</li>
+        <li>Concatenation (L₁ · L₂)</li>
+        <li>Kleene star (L*)</li>
+        <li>Complement (L̄)</li>
+        <li>Intersection (L₁ ∩ L₂)</li>
+        <li>Reversal (Lᴿ)</li>
+      </ul>
+    </div>
+    <div class="learn-card">
+      <div class="tag tag-dfa">DFA Minimization</div>
+      <h3>Minimizing a DFA</h3>
+      <p>For every regular language there exists a unique minimal DFA (fewest states). The Myhill-Nerode theorem tells us the number of states needed equals the number of distinguishable equivalence classes of strings.</p>
+      <p>Use the table-filling algorithm to merge indistinguishable states.</p>
+    </div>
+    <div class="learn-card">
+      <div class="tag tag-both">Pumping Lemma</div>
+      <h3>Proving Non-Regularity</h3>
+      <p>Not all languages are regular! The <em>Pumping Lemma</em> gives a necessary condition for regular languages — if a language fails it, no FA can recognize it.</p>
+      <p>Example: {aⁿbⁿ | n ≥ 0} (equal a's and b's) is NOT regular — it requires infinite memory.</p>
+    </div>
+  </div>
+
+  <div class="learn-section-title"><span>💡</span> Common Patterns &amp; Tips</div>
+
+  <div class="learn-card full">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+      <div>
+        <h3 style="margin-bottom:12px;font-size:15px">DFA Design Patterns</h3>
+        <ul>
+          <li>Counting mod n → needs n states arranged in a cycle</li>
+          <li>Ends with pattern P of length k → needs 2ᵏ states in worst case (DFA) or just k+1 states (NFA)</li>
+          <li>Contains substring → use KMP-like structure; needs |P|+1 states</li>
+          <li>Starts with prefix → linear chain of states for the prefix</li>
+          <li>Both A and B → product construction (|A| × |B| states)</li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="margin-bottom:12px;font-size:15px">NFA Design Tips</h3>
+        <ul>
+          <li>Use ε-transitions to compose machines (A then B: connect A's accept to B's start with ε)</li>
+          <li>For union of L₁ and L₂: new start state → ε to both machines' starts</li>
+          <li>For Kleene star L*: add ε from accept states back to start</li>
+          <li>For "suffix" patterns, NFA is simpler than DFA — guess when the suffix begins</li>
+          <li>Every regex has a direct NFA via Thompson's construction</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
