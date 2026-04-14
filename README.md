@@ -22,7 +22,7 @@ This project is a zero-dependency, single-page web application built with plain 
 - **Delete transitions** — click the ✕ next to any transition in the list
 - **Drag to reposition** — switch to the Move tool and drag states anywhere on the canvas
 
-### ▶ Simulation
+### Simulation
 - **Run** — automatically steps through the input string at the chosen speed
 - **Step** — manually advance one character at a time
 - **Reset** — returns to the initial state
