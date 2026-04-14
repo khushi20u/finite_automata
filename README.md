@@ -1,18 +1,18 @@
-# ⚡ Finite Automata Visualizer
+# Finite Automata Visualizer
 
 An interactive, browser-based tool for building, simulating, and learning about **Deterministic Finite Automata (DFA)** and **Nondeterministic Finite Automata (NFA)** — including epsilon (ε) transitions.
 
 ---
 
-## 📸 Overview
+## Overview
 
 This project is a zero-dependency, single-page web application built with plain HTML, CSS, and JavaScript. It provides a visual canvas where you can design finite automata by drawing states and transitions, then simulate them step-by-step on any input string.
 
 ---
 
-## ✨ Features
+## Features
 
-### 🔧 Builder
+### Builder
 - **Add & delete states** — click the `+ Add State` button or double-click directly on the canvas
 - **Rename states** — via the ✎ button in the state list or right-click → Rename on the canvas
 - **Set start / accept states** — right-click any state on the canvas for a context menu
@@ -28,7 +28,7 @@ This project is a zero-dependency, single-page web application built with plain 
 - **Reset** — returns to the initial state
 - **Tape display** — visual input tape highlights the current character being read
 - **NFA parallel states** — active state set is shown as pills during NFA simulation; ε-closure is computed automatically at every step
-- **Speed control** — slider from slow (🐢) to fast (🐇)
+- **Speed control** — slider from slow to fast
 - **Bottom log bar** — pinned simulation log below the canvas shows every transition step, colour-coded by type (step / accept / reject / warn)
 
 ### ⊞ Presets
@@ -42,7 +42,7 @@ Five built-in examples to get started instantly:
 | Ends with 01 | NFA | Binary strings ending in "01" (demonstrates nondeterminism) |
 | ε-NFA: (a\|ab)*b | NFA | Strings over {a,b} matching (a\|ab)*b (demonstrates ε-transitions) |
 
-### 📚 Learn
+### Learn
 A built-in reference guide covering:
 - What is a Finite Automaton (formal 5-tuple definition)
 - DFA vs NFA — full comparison table
@@ -53,7 +53,7 @@ A built-in reference guide covering:
 
 ---
 
-## 📁 File Structure
+## File Structure
 
 ```
 fa-visualizer/
@@ -65,7 +65,7 @@ fa-visualizer/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 No build step, no dependencies, no install required.
 
@@ -77,7 +77,7 @@ No build step, no dependencies, no install required.
 
 ---
 
-## 🎨 Design
+## Design
 
 - **Color palette** — inspired by a vivid sunset: crimson `#8A191F`, red `#FD4219`, orange `#FD7E05`, amber `#FCA201`, lilac `#C77CBF`, purple `#8B276F`, magenta `#B72065`
 - **Background** — very dark magenta `#0d000a`
@@ -86,7 +86,7 @@ No build step, no dependencies, no install required.
 
 ---
 
-## 🧠 How the Simulation Works
+## How the Simulation Works
 
 | Mode | Transition function | Acceptance |
 |---|---|---|
@@ -97,7 +97,7 @@ For NFA, **ε-closure** is computed after every move: all states reachable via z
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -109,6 +109,6 @@ For NFA, **ε-closure** is computed after every move: all states reachable via z
 
 ---
 
-## 📄 License
+## License
 
 Free to use for educational purposes.
